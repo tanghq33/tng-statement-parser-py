@@ -1,10 +1,11 @@
 import camelot
 import pandas as pd
-from directory import get_files
-from naming import snake_case, fix_spaces
-from utility import init_logger, extract_convert_date_range
+from .naming import snake_case, fix_spaces
 
 def parse_pdf(path: str) -> pd.DataFrame:
+    return process_dataframe(process_pdf(path))
+
+def process_pdf(path: str) -> pd.DataFrame:
     column_separator = ['80,140,230,295,460,657,750']
     first_page = ['15,369,823,51']
     first_table = camelot.read_pdf(path, flavor='stream', pages='1', columns=column_separator, table_areas=first_page, split_text=True)
@@ -48,23 +49,3 @@ def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     temp_df['DESCRIPTION'] = temp_df['DESCRIPTION'].apply(lambda x: fix_spaces(x.replace('\n', ' ')))
 
     return temp_df
-
-def main():
-    files = get_files('/Users/haoquantang/Downloads/statements', '*.pdf')
-
-    dfs = []
-
-    for file in files:
-        df = parse_pdf(file)
-        df = process_dataframe(df)
-
-        df.to_csv(file.replace('.pdf', '.csv'), index=False)
-
-        dfs.append(df.copy())
-
-    all_df = pd.concat(dfs, ignore_index=True)
-    all_df = all_df.drop_duplicates(subset='REFERENCE', keep="first")
-    all_df.to_csv('all.csv', index=False)
-
-if __name__ == "__main__":
-    main()
